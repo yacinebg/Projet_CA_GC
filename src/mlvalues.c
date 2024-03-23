@@ -6,6 +6,10 @@
 #include "alloc.h"
 #include "instruct.h"
 #include "primitives.h"
+#include "domain_state.h"
+#include "config.h"
+#include "gc.h"
+
 
 mlvalue make_empty_block(tag_t tag) {
   mlvalue* block = caml_alloc(sizeof(mlvalue));
@@ -20,6 +24,7 @@ mlvalue make_empty_block(tag_t tag) {
 // }
 
 mlvalue make_closure(uint64_t addr, mlvalue env) {
+  CHECK_AND_RUN_GC(2);
   mlvalue* block = caml_alloc(3 * sizeof(mlvalue));
   block[0] = Make_header(2, WHITE, CLOSURE_T);
   block[1] = Val_long(addr);

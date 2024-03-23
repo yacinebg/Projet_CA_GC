@@ -10,7 +10,8 @@
 #include "alloc.h"
 #include "primitives.h"
 
-#include "gc.c"
+
+
 
 /* Helpers to manipulate the stack. Note that |sp| always point to the
    first empty element in the stack; hence the prefix -- in POP, but

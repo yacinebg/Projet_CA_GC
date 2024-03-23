@@ -2,7 +2,7 @@
 
 #include "domain_state.h"
 #include "config.h"
-#include "mlvalues.h"
+
 
 
 caml_domain_state* Caml_state;
@@ -19,7 +19,7 @@ void caml_init_domain() {
   Caml_state->heap_size = INITIAL_HEAP_SIZE;
 
   next_alloc = Caml_state->heap; // on initialisation le pointeur next_alloc au début du tas.
-  
+
   Caml_state->accu = 0;
   Caml_state->sp = 0;
   Caml_state->env = Make_empty_env();

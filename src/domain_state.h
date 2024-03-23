@@ -1,8 +1,10 @@
+
 #ifndef _DOMAIN_STATE_H
 #define _DOMAIN_STATE_H
 #define INITIAL_HEAP_SIZE (32 * 1024) // 32 Ko
-
 #include "mlvalues.h"
+
+
 
 
 typedef struct _caml_domain_state {

@@ -1,0 +1,18 @@
+CONST 5
+PUSH
+CONST 0
+MAKEBLOCK 2 ENV_T   
+PUSH
+CLOSURE make_list
+PUSH
+CONST 3
+PUSH
+CONST 0
+MAKEBLOCK 2 ENV_T  
+PUSH
+CLOSURE make_list
+CALL 1              
+DROP               
+CONST 0          
+CALL 1             
+STOP
