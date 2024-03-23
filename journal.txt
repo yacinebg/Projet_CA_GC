@@ -1,0 +1,52 @@
+rm -f alloc.o interp.o minizam.o mlvalues.o parser.o primitives.o domain.o
+rm -f minizam
+gcc -c -Wall -Wextra -g alloc.c -o alloc.o
+gcc -c -Wall -Wextra -g interp.c -o interp.o
+gcc -c -Wall -Wextra -g minizam.c -o minizam.o
+gcc -c -Wall -Wextra -g mlvalues.c -o mlvalues.o
+gcc -c -Wall -Wextra -g parser.c -o parser.o
+gcc -c -Wall -Wextra -g primitives.c -o primitives.o
+gcc -c -Wall -Wextra -g domain.c -o domain.o
+gcc -Wall -Wextra -g alloc.o interp.o minizam.o mlvalues.o parser.o primitives.o domain.o -o minizam
+Compilation OK.
+
+Running tests...
+
+[OK] appterm/facto_tailrec
+[OK] appterm/fun_appterm
+[OK] bench/list_1
+[OK] bench/list_2
+[OK] bench/list_3
+[OK] bench/list_4
+[OK] bench/list_5
+[OK] block_values/array_access
+[OK] block_values/array_set
+[OK] block_values/array_sum
+[OK] block_values/couple
+[OK] block_values/insertion_sort
+[OK] block_values/liste
+[OK] block_values/liste_iter
+[OK] block_values/liste_length
+[OK] block_values/ref
+[OK] exceptions/exn
+[OK] exceptions/exn2
+[OK] exceptions/exn_pop
+[OK] exceptions/exn_uncaught
+[OK] exceptions/exnexn
+[OK] n-ary_funs/grab1
+[OK] n-ary_funs/grab2
+[OK] n-ary_funs/grab3
+[OK] n-ary_funs/grab4
+[OK] rec_funs/facto
+[OK] rec_funs/fibo
+[OK] unary_funs/arithexpr
+[OK] unary_funs/const
+[OK] unary_funs/fun1
+[OK] unary_funs/fun2
+[OK] unary_funs/fun3
+[OK] unary_funs/fun4
+[OK] unary_funs/fun5
+
+
+Ran 34 tests. 0 failure. 34 successes.
+

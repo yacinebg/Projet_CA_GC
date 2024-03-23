@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "type_traits": "c",
+        "stdlib.h": "c",
+        "config.h": "c",
+        "mlvalues.h": "c",
+        "domain_state.h": "c",
+        "alloc.h": "c"
+    }
+}
