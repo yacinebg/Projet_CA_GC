@@ -208,5 +208,5 @@ void run_gc(){
     compact();
     printf("gc fini\n");
     reset_colors();
-    print_heap_state();
+    //print_heap_state();
 }
