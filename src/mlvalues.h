@@ -10,29 +10,7 @@ typedef uint64_t header_t;
 typedef enum { WHITE, GRAY, BLACK } color_t;
 typedef enum { ENV_T, CLOSURE_T, BLOCK_T } tag_t;
 
-//pointeur pour suivre la position actuelle dans le tas
-extern mlvalue* next_alloc;
 
-
-#define CHECK_AND_RUN_GC(size) \
-  do { \
-    if ((char*)next_alloc + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->heap_size) { \
-      run_gc(); \
-      if ((char*)next_alloc + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->heap_size) { \
-        fprintf(stderr, "GC bien éxécuté, mais pas d'espace dans le Tas ! \n"); \
-        exit(EXIT_FAILURE); \
-      } \
-    } \
-  } while (0)
-
-// Macro pour allouer un bloc dans le tas.
-#define make_block(size, tag) ({ \
-  CHECK_AND_RUN_GC(size); \
-  mlvalue* block = next_alloc; \
-  *block = Make_header(size, WHITE, tag); \
-  next_alloc += (size) + 1; \
-  Val_ptr(block + 1); \
-})
 
 /* If a mlvalue ends with 1, it's an integer, otherwise it's a pointer. */
 #define Is_long(v)  (((v) & 1) != 0)
@@ -72,13 +50,40 @@ bits  63    10 9     8 7   0
 #define Addr_closure(c) Long_val(Field0(c))
 #define Env_closure(c)  Field1(c)
 
+void check_and_run_gc(size_t size);
 mlvalue make_empty_block(tag_t tag);
 // mlvalue make_block(size_t size, tag_t tag);
 
+//pointeur pour suivre la position actuelle dans le tas
+extern mlvalue* next_alloc;
+
+/* ancienne macro 
+#define CHECK_AND_RUN_GC(size) \
+  do { \
+    if ((char*)next_alloc + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->heap_size) { \
+      run_gc(); \
+      if ((char*)next_alloc + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->heap_size) { \
+        // si après le GC on a toujours pas assez de place on retourne un erreur. Plus tard on pourrais faire un realloc \
+        fprintf(stderr, "GC bien éxécuté, mais pas d'espace dans le Tas ! \n"); \
+        exit(EXIT_FAILURE); \
+      } \
+    } \
+  } while (0)
+*/
+
+// Macro pour allouer un bloc dans le tas.
+#define Make_block(size, tag) ({ \
+  check_and_run_gc((size)); \
+  mlvalue* block = next_alloc; \
+  *block = Make_header(size, WHITE, tag); \
+  next_alloc += (size) + 1; \
+  Val_ptr(block + 1); /*valeur de retour */\
+})
+
 /* #define Make_empty_env() make_empty_block(ENV_T) */
-#define Make_empty_env() make_block(0, ENV_T)
+#define Make_empty_env() Make_block(0, ENV_T)
 /* #define Make_env(size) make_block(size,ENV_T) */
-#define Make_env(size) make_block(size,ENV_T)
+#define Make_env(size) Make_block(size,ENV_T)
 
 
 mlvalue make_closure(uint64_t addr, mlvalue env);

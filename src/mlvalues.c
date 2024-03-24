@@ -10,26 +10,90 @@
 #include "config.h"
 #include "gc.h"
 
+/* Version de ewen pour lancer le gc 
+void check_and_trigger_gc(size_t size) {
+    if ((char*)Caml_state -> heap_next_block + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state-> size_of_heap) {
+        gc();
+        if ((char*)Caml_state -> heap_next_block + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->size_of_heap) {
+            fprintf(stderr, "Heap overflow\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+*/
+void check_and_run_gc(size_t size) {
+  if ((char*)next_alloc + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->heap_size) {       
+    run_gc();
+    if ((char*)next_alloc + ((size) + 1) * sizeof(mlvalue) > (char*)Caml_state->heap + Caml_state->heap_size) {
+    /* si après le GC on a toujours pas assez de place on retourne un erreur. Plus tard on pourrais faire un realloc */
+      fprintf(stderr, "GC bien éxécuté, mais pas d'espace dans le Tas ! \n");
+      exit(EXIT_FAILURE);
+    }
+  }
+}
 
 mlvalue make_empty_block(tag_t tag) {
+  Make_block(0, tag);
+  /*
   mlvalue* block = caml_alloc(sizeof(mlvalue));
   block[0] = Make_header(0, WHITE, tag);
   return Val_ptr(block+1);
+
+  //Version d'Ewen sans macro
+  //On pourrais modifier cela dans caml_alloc en lui passant la taille de la mémoire a allouer "size"
+  check_and_trigger_gc(0);
+  mlvalue* block = Caml_state-> heap_next_block; 
+  Caml_state -> heap_next_block  += 1;
+  block[0] = Make_header(0, WHITE, tag);
+  return Val_ptr(block+1);
+  */
 }
+
 
 // mlvalue make_block(size_t size, tag_t tag) {
 //   mlvalue* block = caml_alloc((size+1) * sizeof(mlvalue));
 //   block[0] = Make_header(size, WHITE, tag);
 //   return Val_ptr(block+1);
 // }
+/*
+//Version d'Ewen sans macro
+mlvalue make_block(size_t size, tag_t tag) { 
+  //mlvalue* block = caml_alloc((size+1) * sizeof(mlvalue));
+  //On pourrais modifier cela dans caml_alloc en lui passant la taille de la mémoire a allouer "size"
+  check_and_trigger_gc(size);
+  mlvalue* block = Caml_state-> heap_next_block; 
+  Caml_state -> heap_next_block  += size + 1; 
+  block[0] = Make_header(size, WHITE, tag);
+  return Val_ptr(block+1);
+}
+*/
 
 mlvalue make_closure(uint64_t addr, mlvalue env) {
-  CHECK_AND_RUN_GC(2);
+  //CHECK_AND_RUN_GC(2);
+  check_and_run_gc(2);
+  
+  //*** version d'origine
+  
   mlvalue* block = caml_alloc(3 * sizeof(mlvalue));
   block[0] = Make_header(2, WHITE, CLOSURE_T);
   block[1] = Val_long(addr);
   block[2] = env;
   return Val_ptr(block+1);
+  
+  /*
+  //Version d'Ewen sans macro modifier pour coller au code de yacine
+  //Cette version permet de supprimer les fuites de mémoire vue avec valgrind
+  //Cependant elle ne fonctionne pas avec le GC, on obtient des réultats incohérents
+  
+  //check_and_trigger_gc(2);
+  mlvalue* block = next_alloc; 
+  next_alloc  += 3;  //  +3 car ajout des 2 champs de la closure et du header
+  block[0] = Make_header(2, WHITE, CLOSURE_T);
+  block[1] = Val_long(addr);
+  block[2] = env;
+  return Val_ptr(block+1);
+  */
+  
 }
 
 

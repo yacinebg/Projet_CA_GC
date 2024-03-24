@@ -48,7 +48,7 @@ int label_addr(lbl_list* l, char* label) {
 void free_labels(lbl_list* l) {
   while (l) {
     lbl_list* next = l->next;
-    free(l->label); //fuite ici
+    free(l->label); //pour réparer la fuite 2
     free(l);
     l = next;
   }
@@ -172,7 +172,7 @@ int instr_of_str(char* buff) {
 
 code_t* parse(char* filename) {
 
-  FILE* f = fopen(filename, "r");
+  FILE* f = fopen(filename, "r"); //Fuites ici
   if (f == NULL) {
     fprintf(stderr, "[Fatal error] Cannot open bytecode file '%s'.\n", filename);
     exit(EXIT_FAILURE);
@@ -199,7 +199,7 @@ code_t* parse(char* filename) {
     int len = strlen(buff);
     if (buff[len-1] == ':') {
       buff[len-1] = '\0';
-      add_label(&labels, strdup(buff), code_size);
+      add_label(&labels, strdup(buff), code_size); //Fuite 2
       fscanf(f, " %1023s", buff);
     }
 
@@ -226,6 +226,6 @@ code_t* parse(char* filename) {
                                        .arg2 = arg2 };
     code_size++;
   }
-  fclose(f); //fuite de memoire fichier regle
+  fclose(f); //réparations de la fuite du fopen
   return assemble(code, labels, instr_count, code_size);
 }

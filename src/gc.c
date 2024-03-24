@@ -6,6 +6,8 @@
 #include "gc.h"
 #include "config.h"
 
+#define MLVALUE_NULL ((mlvalue)(-1)) // Valeur NULL pour les mlvalues, pas une adresse valide
+
 typedef struct {
     mlvalue* old_address;
     mlvalue* new_address;
@@ -33,41 +35,51 @@ mlvalue new_address_of(mlvalue* old_address) {
     // Calculez la nouvelle adresse en fonction de la compaction effectuée
     for (size_t i = 0; i < address_map_size; i++) {
         if (address_map[i].old_address == old_address) {
-            return address_map[i].new_address;
+            return *address_map[i].new_address;
         }
     }
-    return NULL; // Retourne NULL si l'ancienne adresse n'est pas trouvée.
+    return MLVALUE_NULL; // Retourne MLVALUE_NULL si l'ancienne adresse n'est pas trouvée.
 }
 
 //mettre à jours les pointeurs
 void update_all_pointers() {
     mlvalue* current = Caml_state->heap;
 
+    // Vérifier que le pointeur courant ne dépasse jamais next_alloc
     while (current < next_alloc) {
+        // Récupération de l'en-tête à l'emplacement actuel
         header_t header = *current;
         if (Is_block(header) && Color_hd(header) == BLACK) {
+            // Taille de l'objet pointé par current
             size_t size = Size_hd(header);
-            // Itère sur chaque champ du bloc
+
+            // Itération sur chaque champ de l'objet
             for (size_t i = 0; i < size; i++) {
                 mlvalue* field_address = &Field(current, i);
-                mlvalue field = *field_address;
-                if (Is_block(field)) {
-                    // Conversion de mlvalue à mlvalue* pour new_address_of
-                    mlvalue* field_block_address = Ptr_val(field);
-                    mlvalue new_address = new_address_of(field_block_address);
-                    if (new_address != (mlvalue)NULL) {
-                        *field_address = new_address;
+
+                // Vérification que le champ est bien un bloc avant de continuer
+                if (Is_block(*field_address)) {
+                    // Récupération de l'adresse actuelle du champ
+                    mlvalue field = *field_address;
+                    mlvalue* field_ptr = Ptr_val(field);
+
+                    // Assurer que field_ptr est dans les limites du tas
+                    if (field_ptr >= Caml_state->heap && field_ptr < next_alloc) {
+                        mlvalue new_address = new_address_of(field_ptr);
+                        if (new_address != (mlvalue)NULL) {
+                            *field_address = new_address;
+                        }
                     }
                 }
             }
-            current += size + 1; // Avance au bloc suivant
+            // Avancer au bloc suivant
+            current += size + 1;
         } else {
-            current += 1; // Avance au mot mémoire suivant
+            // Avancer d'un mot mémoire si ce n'est pas un bloc
+            current += 1;
         }
     }
 }
-
-
 
 
 
@@ -134,9 +146,8 @@ void compact() {
 void print_heap_state() {
     printf("État du tas:\n");
     mlvalue* current = Caml_state->heap; // Point de départ du tas
-    mlvalue* heap_end = current + (Caml_state->heap_size / sizeof(mlvalue)); // Fin du tas
 
-    while (current < heap_end) {
+    while (current < next_alloc) {
         header_t header = *current; // Récupérez l'en-tête à l'adresse actuelle
         // Vérifiez si l'adresse contient un bloc (et non un entier)
         if (Is_block(header)) {
@@ -153,6 +164,23 @@ void print_heap_state() {
 
             // Déplacez le pointeur actuel à la fin du bloc pour passer au suivant
             current += size + 1;
+        } else {
+            // S'il s'agit d'un entier, passez simplement au mot suivant
+            current++;
+        }
+    }
+}
+void reset_colors() {
+    mlvalue* current = Caml_state->heap;
+    while (current < next_alloc) {
+        header_t header = *current;
+        if (Is_block(header)) { // S'assurer que c'est bien un bloc
+            size_t size = Size_hd(header);
+            color_t color = Color_hd(header);
+            if (color == BLACK) { // Si l'objet est marqué noir
+                *current = Make_header(size, WHITE, Tag_hd(header)); // Remettre à blanc
+            }
+            current += size + 1; // Passer à l'objet suivant
         } else {
             // S'il s'agit d'un entier, passez simplement au mot suivant
             current++;
@@ -179,5 +207,6 @@ void run_gc(){
     //Etape 2 : Compacter 
     compact();
     printf("gc fini\n");
+    reset_colors();
     print_heap_state();
 }

@@ -109,6 +109,35 @@ mlvalue caml_interprete(code_t* prog) {
 
     case APPLY: {
       uint64_t n = prog[pc++];
+      /* Version originale du proffesseur
+      mlvalue* tmp = malloc(n * sizeof(mlvalue)); // TODO: remove malloc
+      for (uint64_t i = 0; i < n; i++) {
+        tmp[i] = POP_STACK();
+      }
+      PUSH_STACK(env);
+      PUSH_STACK(Val_long(pc));
+      PUSH_STACK(Val_long(extra_args));
+      // push in reverse order to keep the initial order //
+      for (int i = n-1; i >= 0; i--) {
+        PUSH_STACK(tmp[i]);
+      }
+      free(tmp);
+      */
+      /*version de Ewen 
+      //Cette partie a été réfléchis et travaillé avec Dana¨el Carbonneau
+      for(uint64_t i =  sp-1; i >= sp-n; i--) {
+        stack[i+3] = stack[i];
+      }
+      sp =  sp + 3;
+      stack[(sp)-n-3] = env;
+      stack[(sp)-n-2] = Val_long(pc);
+      stack[(sp)-n-1] = Val_long(extra_args);
+
+      pc = Addr_closure(accu);
+      env = Env_closure(accu);
+      extra_args = n-1;
+      break;
+      */
       // Incrémentez d'abord sp pour faire de la place pour env, pc et extra_args.
       sp += 3;
 
@@ -126,13 +155,30 @@ mlvalue caml_interprete(code_t* prog) {
       pc = Addr_closure(accu);        // Pointeur de code de la fermeture dans accu
       env = Env_closure(accu);        // Environnement de la fermeture
       extra_args = n-1; 
+      Caml_state->sp = sp;
+      Caml_state->env = env;
+      Caml_state -> accu = accu;
       break;
     }
 
     case APPTERM: {
       uint64_t n = prog[pc++];
       uint64_t m = prog[pc++];
+      /* Version originale du proffesseur :
+      mlvalue* tmp = malloc(n * sizeof(mlvalue)); // TODO: remove malloc
+      for (uint64_t i = 0; i < n; i++) {
+        tmp[i] = POP_STACK();
+      }
+      for (uint64_t i = 0; i < m-n; i++) {
+        POP_STACK();
+      }
+      // push in reverse order to keep the initial order //
+      for (int i = n-1; i >= 0; i--) {
+        PUSH_STACK(tmp[i]);
+      }
+      free(tmp);
 
+      */
       // Pas besoin de tampon temporaire. Déplacez directement les `n` arguments.
       for (uint64_t i = 0; i < n; i++) {
         stack[sp - m + i] = stack[sp - n + i];
@@ -144,8 +190,11 @@ mlvalue caml_interprete(code_t* prog) {
       // Mettez à jour pc, env, et extra_args pour l'appel de la fonction appelée.
       pc = Addr_closure(accu);
       env = Env_closure(accu);
-      extra_args = n - 1; // Préparez extra_args pour la nouvelle fonction.
-      break;
+      extra_args += n - 1; // Préparez extra_args pour la nouvelle fonction.
+      Caml_state -> sp = sp;
+      Caml_state -> env = env;
+      Caml_state -> accu = accu;
+      break;      
     }
 
 
@@ -193,8 +242,8 @@ mlvalue caml_interprete(code_t* prog) {
         extra_args = Long_val(POP_STACK());
         pc  = Long_val(POP_STACK());
         env = POP_STACK();
-        Caml_state->sp = sp;
       }
+      Caml_state->sp = sp;
       Caml_state->accu = accu;
       Caml_state->env = env;
       break;
@@ -243,7 +292,7 @@ mlvalue caml_interprete(code_t* prog) {
 
     case MAKEBLOCK: {
       uint64_t n = prog[pc++];
-      mlvalue blk = make_block(n,BLOCK_T);
+      mlvalue blk = Make_block(n,BLOCK_T);
       if (n > 0) {
         Field(blk,0) = accu;
         for (unsigned int i = 1; i < n; i++) {
