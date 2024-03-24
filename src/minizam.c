@@ -28,7 +28,8 @@ int main(int argc, char** argv) {
   }
 
   mlvalue res = eval_file(argv[1]);
-  caml_free_domain(); //On as plus besoin de la mémoire de notre vm a ce stade du main 
+  //caml_free_domain(); //On as plus besoin de la mémoire de notre vm a ce stade du main 
+  //Cependant, pour une taille de de tas de 4.5GB, il est préférable de ne pas libérer la mémoire de la VM à cause des make_closure dans S
   // TODO: use getopt rather than this not-so-elegant strcmp.
   if (argc >= 3 && strcmp(argv[2], "-res") == 0) {
     char* res_str = val_to_str(res);
